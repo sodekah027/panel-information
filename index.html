@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tech Info Panel — IP + Radio</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0d0e;
+    --panel:#121212;
+    --muted:#6a6a6a;
+    --txt:#00ff00;
+    --radius:6px;
+  }
+  /* Light theme override */
+  .light-theme {
+    --bg: #f5f5f5;
+    --panel: #ffffff;
+    --muted: #555555;
+    --txt: #222222;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family: 'Courier New', Courier, monospace, monospace;
+    background: var(--bg);
+    color: var(--txt);
+    padding:18px;
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  .card{
+    width:min(980px,96%);
+    max-width:980px;
+    background: var(--panel);
+    border-radius:var(--radius);
+    position:relative;
+    padding:18px;
+    display:grid;
+    grid-template-columns: 1fr 340px;
+    gap:16px;
+    box-shadow: none;
+  }
+
+  .card::before{
+    content:none;
+  }
+
+  .card > * { position:relative; z-index:1; }
+
+  .main { padding:6px 10px; }
+
+  .title{
+    margin:0 0 6px 0;
+    font-size:22px;
+    letter-spacing:0.1em;
+    color: var(--txt);
+    text-shadow: 0 0 3px var(--txt);
+  }
+
+  .subtitle { margin:6px 0 12px 0; color:var(--muted); font-size:13px; font-style: italic; }
+
+  .ipbox {
+    background: var(--bg);
+    border-radius:6px;
+    padding:16px;
+    border:1px solid #004400;
+    color: var(--txt);
+    font-size:14px;
+    line-height:1.5;
+    box-shadow: none;
+  }
+
+  .ip-header {
+    display:flex; gap:12px; align-items:center; margin-bottom:10px; flex-wrap:wrap;
+  }
+  .ip-address {
+    font-weight:700; font-size:18px; color:#00ff00; display:flex; gap:8px; align-items:center;
+  }
+  .ip-flag img {
+    width:24px; height:18px; border-radius:3px; display:block;
+  }
+
+  .ip-grid {
+    display:grid; 
+    grid-template-columns: repeat(2, 1fr);
+    gap:8px;
+    font-size:13px;
+    color: var(--muted);
+  }
+  .chip-row {
+    margin-top:12px;
+    display:flex; 
+    gap:8px; 
+    flex-wrap:wrap;
+  }
+  .chip {
+    background: transparent;
+    padding:8px 10px;
+    border-radius:4px;
+    font-size:12px;
+    color: var(--muted);
+    border: 1px solid #004400;
+  }
+
+  .player {
+    padding:6px 10px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    align-items:stretch;
+    justify-content:flex-start;
+  }
+  .radio-card {
+    background: var(--bg);
+    border-radius:6px;
+    padding:16px;
+    border:1px solid #004400;
+    display:flex;
+    gap:12px;
+    align-items:center;
+    box-shadow:none;
+  }
+  .btn {
+    appearance:none; border:none; cursor:pointer; display:inline-grid; place-items:center;
+    width:56px; height:56px; border-radius:6px; font-size:20px; color: var(--txt);
+    background: #003300;
+    box-shadow:none;
+    transition: transform .12s ease;
+  }
+  .btn:active{ transform:translateY(1px); }
+  .btn.playing{
+    background: #006600;
+  }
+
+  .meta {
+    flex:1;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .meta .station {
+    color: var(--txt);
+    font-weight:700;
+    display:block;
+    margin-bottom:4px;
+  }
+
+  .visualizer {
+    display:flex;
+    gap:6px;
+    align-items:end;
+    height:36px;
+    width:100%;
+  }
+  .vbar {
+    width:8px;
+    background:#00ff00;
+    border-radius:3px;
+    transform-origin:bottom;
+    opacity:.45;
+    animation: idlePulse 900ms ease-in-out infinite;
+  }
+  .vbar:nth-child(1){animation-delay:0ms}
+  .vbar:nth-child(2){animation-delay:120ms}
+  .vbar:nth-child(3){animation-delay:240ms}
+  .vbar:nth-child(4){animation-delay:60ms}
+  .vbar:nth-child(5){animation-delay:180ms}
+  @keyframes idlePulse {
+    0%{ transform:scaleY(.35)}
+    50%{transform:scaleY(.75)}
+    100%{transform:scaleY(.4)}
+  }
+  .playing-visual .vbar {
+    opacity:1;
+    animation-duration:520ms;
+  }
+  .playing-visual .vbar:nth-child(odd) {
+    background: #00ff00;
+  }
+  .playing-visual .vbar:nth-child(even) {
+    background: #009900;
+  }
+
+  .controls {
+    display:flex;
+    gap:8px;
+    align-items:center;
+    justify-content:flex-end;
+    margin-top:8px;
+  }
+  .small-btn {
+    background: transparent;
+    border:1px solid #004400;
+    color: var(--muted);
+    padding:8px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:13px;
+    display:inline-flex;
+    gap:8px;
+    align-items:center;
+    transition: background-color .15s ease;
+  }
+  .small-btn:hover {
+    background-color: #003300;
+    color: #00ff00;
+  }
+  .small-btn.loading {
+    color:#00ff00;
+    border-color: #007700;
+    box-shadow:none;
+  }
+
+  .spinner {
+    width:16px; height:16px; border-radius:50%;
+    border:2px solid rgba(0,255,0,0.2); 
+    border-top-color: rgba(0,255,0,0.8);
+    animation: spin 900ms linear infinite; display:inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .footer {
+    grid-column: 1/-1;
+    color: var(--muted);
+    font-size:12px;
+    display:flex;
+    justify-content:space-between;
+  }
+
+  /* responsive */
+  @media (max-width:880px){
+    .card{ grid-template-columns:1fr; }
+    .player{ order:-1; }
+  }
+
+  /* Toggle theme button */
+  #themeToggle {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: var(--txt);
+    cursor: pointer;
+    font-size: 22px;
+    padding: 6px;
+    border-radius: 8px;
+    transition: color 0.3s, background-color 0.3s;
+    z-index: 1000;
+  }
+  #themeToggle:hover {
+    background-color: rgba(0,255,0,0.1);
+    color: #00ff00;
+  }
+
+</style>
+</head>
+<body>
+  <div class="card" role="main" aria-label="Tech Info Panel">
+    <button id="themeToggle" aria-label="Toggle tema gelap terang" title="Toggle tema">
+      <i id="themeIcon" class="bi bi-moon-fill"></i>
+    </button>
+    <div class="main">
+      <h1 class="title">This Server Information</h1>
+
+      <div id="ipbox" class="ipbox" aria-live="polite">
+        <div class="ip-header">
+          <div class="ip-address"><span id="ip-address-value">Memuat...</span></div>
+          <div class="ip-flag" id="ip-flag" aria-hidden="true"></div>
+        </div>
+
+        <div id="ip-grid" class="ip-grid" style="display:none"></div>
+
+        <div class="chip-row" style="display:none" id="chip-row">
+          <div id="chip-ip" class="chip">IP: —</div>
+          <div id="chip-country" class="chip">Country: —</div>
+          <div id="chip-city" class="chip">City: —</div>
+        </div>
+
+        <div id="ip-error" style="display:none;color:#ff9b9b;margin-top:8px;font-size:13px;"></div>
+      </div>
+    </div>
+
+    <aside class="player" aria-label="Radio Player">
+      <div class="radio-card" role="region" aria-label="Radio controls">
+        <button id="btnPlay" class="btn" aria-pressed="false" title="Play / Pause">
+          <i id="icon" class="bi bi-play-fill" style="font-size:20px"></i>
+        </button>
+
+        <div class="meta">
+          <span class="station">prambors FM</span>
+          <small id="status" style="color:var(--muted)">Stopped</small>
+          <div style="height:8px"></div>
+          <div id="visualizer" class="visualizer" aria-hidden="true">
+            <div class="vbar" style="height:24%"></div>
+            <div class="vbar" style="height:48%"></div>
+            <div class="vbar" style="height:32%"></div>
+            <div class="vbar" style="height:60%"></div>
+            <div class="vbar" style="height:44%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls" style="margin-top:6px;">
+        <button id="refreshBtn" class="small-btn" title="Refresh IP">
+          <span id="refreshIcon"><i class="bi bi-arrow-clockwise"></i></span>
+          <span id="refreshText">Refresh IP</span>
+        </button>
+        <a class="small-btn" href="https://wa.me/6283851354422" target="_blank" rel="noopener">owner this website</a>
+      </div>
+    </aside>
+
+
+
+<div style="text-align:center; padding:15px; background-color:#111; font-family:sans-serif;">
+    <div style="font-weight:bold; font-size:16px; animation: rgbGlow 5s infinite;">
+        RENAISSANCE.ID
+    </div>
+    <div style="font-size:14px; animation: rgbGlow 5s infinite;">
+        ©2024 renaissance.id technology
+    </div>
+</div>
+
+<style>
+@keyframes rgbGlow {
+    0% { color: rgb(255, 0, 0); }
+    33% { color: rgb(0, 255, 0); }
+    66% { color: rgb(0, 0, 255); }
+    100% { color: rgb(255, 0, 0); }
+}
+</style>
+
+  <audio id="radio" preload="none" crossorigin="anonymous">
+    <source src="https://s7.alhastream.com/radio/8350/radio?1608459773" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+
+<script>
+/* ========== THEME TOGGLE ========== */
+const themeToggle = document.getElementById('themeToggle');
+const themeIcon = document.getElementById('themeIcon');
+
+function setTheme(light){
+  if(light){
+    document.documentElement.classList.add('light-theme');
+    themeIcon.className = 'bi bi-sun-fill';
+    localStorage.setItem('techInfoTheme','light');
+  } else {
+    document.documentElement.classList.remove('light-theme');
+    themeIcon.className = 'bi bi-moon-fill';
+    localStorage.setItem('techInfoTheme','dark');
+  }
+}
+
+// cek preferensi tersimpan
+const savedTheme = localStorage.getItem('techInfoTheme');
+if(savedTheme === 'light'){
+  setTheme(true);
+} else {
+  setTheme(false);
+}
+
+themeToggle.addEventListener('click', () => {
+  const isLight = document.documentElement.classList.contains('light-theme');
+  setTheme(!isLight);
+});
+
+
+/* ========== IP API & RADIO LOGIC ========== */
+/* Kode fetch IP dan radio sama seperti sebelumnya */
+
+const ipApis = [
+  { name:'ip-api', url:'https://ip-api.com/json/?fields=status,message,query,country,countryCode,regionName,city,zip,lat,lon,isp,org,as,timezone' },
+  { name:'ipapi',  url:'https://ipapi.co/json/' },
+  { name:'ipinfo', url:'https://ipinfo.io/json' },
+  { name:'freeipapi', url:'https://freeipapi.com/json' }
+];
+
+function normalize(data, source){
+  if(source === 'ip-api'){
+    return {
+      ip: data.query || '',
+      country: data.country || '',
+      countryCode: data.countryCode || '',
+      region: data.regionName || '',
+      city: data.city || '',
+      zip: data.zip || '',
+      lat: data.lat || '',
+      lon: data.lon || '',
+      isp: data.isp || '',
+      org: data.org || '',
+      asn: data.as || '',
+      timezone: data.timezone || '',
+      raw: data
+    };
+  }
+  if(source === 'ipapi'){
+    return {
+      ip: data.ip || '',
+      country: data.country_name || data.country || '',
+      countryCode: data.country || '',
+      region: data.region || '',
+      city: data.city || '',
+      zip: data.postal || '',
+      lat: data.latitude || data.lat || '',
+      lon: data.longitude || data.lon || '',
+      isp: data.org || '',
+      org: data.org || '',
+      asn: data.org || '',
+      timezone: data.timezone || data.utc_offset || '',
+      raw: data
+    };
+  }
+  if(source === 'ipinfo'){
+    let lat='', lon='';
+    if(data.loc){ [lat, lon] = data.loc.split(','); }
+    return {
+      ip: data.ip || '',
+      country: '',
+      countryCode: data.country || '',
+      region: data.region || '',
+      city: data.city || '',
+      zip: data.postal || '',
+      lat: lat || '',
+      lon: lon || '',
+      isp: data.org || '',
+      org: data.org || '',
+      asn: data.org || '',
+      timezone: data.timezone || '',
+      raw: data
+    };
+  }
+  if(source === 'freeipapi'){
+    return {
+      ip: data.ip || '',
+      country: data.country || '',
+      countryCode: data.country_code || data.countryCode || '',
+      region: data.region || '',
+      city: data.city || '',
+      zip: data.postal || '',
+      lat: data.latitude || data.lat || '',
+      lon: data.longitude || data.lon || '',
+      isp: data.isp || '',
+      org: data.org || '',
+      asn: data.as || '',
+      timezone: data.timezone || '',
+      raw: data
+    };
+  }
+  return {
+    ip: data.ip || data.query || '',
+    country: data.country || '',
+    countryCode: data.country || '',
+    region: data.region || data.regionName || '',
+    city: data.city || '',
+    zip: data.postal || data.zip || '',
+    lat: data.latitude || data.lat || '',
+    lon: data.longitude || data.lon || '',
+    isp: data.isp || data.org || '',
+    org: data.org || '',
+    asn: data.as || '',
+    timezone: data.timezone || ''
+  };
+}
+
+async function fetchWithFallback(list){
+  for(const api of list){
+    try{
+      const res = await fetch(api.url, { cache:'no-store', mode:'cors' });
+      if(!res.ok) continue;
+      const json = await res.json();
+      if(api.name === 'ip-api'){
+        if(json && json.status === 'success') return normalize(json, api.name);
+        continue;
+      } else {
+        if(json && (json.ip || json.query)) return normalize(json, api.name);
+        continue;
+      }
+    }catch(e){ continue; }
+  }
+  throw new Error('All IP APIs failed');
+}
+
+const ipAddressEl = document.getElementById('ip-address-value');
+const ipFlagEl = document.getElementById('ip-flag');
+const ipGridEl = document.getElementById('ip-grid');
+const chipRow = document.getElementById('chip-row');
+const chipIp = document.getElementById('chip-ip');
+const chipCountry = document.getElementById('chip-country');
+const chipCity = document.getElementById('chip-city');
+const ipError = document.getElementById('ip-error');
+const refreshBtn = document.getElementById('refreshBtn');
+const refreshIcon = document.getElementById('refreshIcon');
+const refreshText = document.getElementById('refreshText');
+
+async function loadIP(showLoading=true){
+  ipError.style.display='none';
+  if(showLoading){
+    ipAddressEl.textContent = 'Memuat...';
+    ipGridEl.style.display='none';
+    chipRow.style.display='none';
+  }
+  refreshBtn.classList.add('loading');
+  refreshIcon.innerHTML = '<span class="spinner" aria-hidden="true"></span>';
+  refreshText.textContent = 'Loading';
+
+  try{
+    const data = await fetchWithFallback(ipApis);
+    ipAddressEl.textContent = data.ip || '—';
+    if(data.countryCode){
+      const cc = String(data.countryCode).toLowerCase();
+      ipFlagEl.innerHTML = `<img src="https://flagcdn.com/24x18/${cc}.png" alt="${data.countryCode}" />`;
+    } else {
+      ipFlagEl.innerHTML = '';
+    }
+    ipGridEl.style.display='grid';
+    ipGridEl.innerHTML = `
+      <div><strong>ISP:</strong> ${esc(data.isp || '—')}</div>
+      <div><strong>Organization:</strong> ${esc(data.org || '—')}</div>
+      <div><strong>Region:</strong> ${esc(data.region || '—')}</div>
+      <div><strong>City:</strong> ${esc(data.city || '—')}</div>
+      <div><strong>ZIP:</strong> ${esc(data.zip || '—')}</div>
+      <div><strong>Lat / Lon:</strong> ${esc(String(data.lat || '—'))} , ${esc(String(data.lon || '—'))}</div>
+      <div><strong>Timezone:</strong> ${esc(data.timezone || '—')}</div>
+    `;
+    chipIp.textContent = `IP: ${data.ip || '—'}`;
+    chipCountry.textContent = `Country: ${data.countryCode || '—'}`;
+    chipCity.textContent = `City: ${data.city || '—'}`;
+
+    chipRow.style.display='flex';
+  }catch(err){
+    ipAddressEl.textContent = 'Gagal';
+    ipError.style.display='block';
+    ipError.textContent = 'Gagal memuat data IP dari semua API.';
+    console.error(err);
+  }finally{
+    refreshBtn.classList.remove('loading');
+    refreshIcon.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+    refreshText.textContent = 'Refresh IP';
+  }
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* init load */
+loadIP();
+
+/* refresh button */
+refreshBtn.addEventListener('click', ()=> loadIP(true));
+
+/* ========== Radio logic & visualizer control ========== */
+const radio = document.getElementById('radio');
+const btn = document.getElementById('btnPlay');
+const icon = document.getElementById('icon');
+const status = document.getElementById('status');
+const visualizer = document.getElementById('visualizer');
+
+function setPlaying(on){
+  if(on){
+    icon.className='bi bi-pause-fill';
+    btn.classList.add('playing');
+    btn.setAttribute('aria-pressed','true');
+    status.textContent = 'Playing';
+    visualizer.classList.add('playing-visual');
+  } else {
+    icon.className='bi bi-play-fill';
+    btn.classList.remove('playing');
+    btn.setAttribute('aria-pressed','false');
+    status.textContent = 'Paused';
+    visualizer.classList.remove('playing-visual');
+  }
+}
+
+/* try autoplay once (may be blocked) */
+window.addEventListener('load', () => {
+  radio.play().then(()=> setPlaying(true)).catch(()=> setPlaying(false));
+});
+
+btn.addEventListener('click', async ()=> {
+  if(radio.paused){
+    try{ await radio.play(); setPlaying(true); }catch(e){ console.warn('Play blocked', e); setPlaying(false); }
+  } else {
+    radio.pause(); setPlaying(false);
+  }
+});
+
+/* keep UI in sync on play/pause events */
+radio.addEventListener('play', ()=> setPlaying(true));
+radio.addEventListener('pause', ()=> setPlaying(false));
+radio.addEventListener('error', ()=> { status.textContent = 'Stream error'; setPlaying(false); });
+
+/* accessibility: allow space to toggle */
+btn.addEventListener('keyup', (ev)=> { if(ev.code==='Space' || ev.key===' ') { ev.preventDefault(); btn.click(); } });
+</script>
+</body>
+</html>
+
+  
